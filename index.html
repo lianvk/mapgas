@@ -29,6 +29,11 @@
             myMap.controls.get('searchControl').options.set('size','small');
     }*/
 
+    function GoToPlace(xx,yy,zoom,gr){
+    myMap.setCenter([xx,yy],zoom);
+    group_id=gr;   
+    };
+
     ymaps.ready(function () {
 
 /*  получаем из хранилища встроенный тип слоя */
@@ -127,7 +132,7 @@ myMap = new ymaps.Map(
                 searchControlProvider: 'yandex#search'
     });
 
-     // Создадим собственный макет выпадающего списка.
+   /*  // Создадим собственный макет выпадающего списка.
      ListBoxLayout = ymaps.templateLayoutFactory.createClass(
             "<button id='my-listbox-header' class='btn btn-success dropdown-toggle' data-toggle='dropdown'>" +
                 "{{data.title}} <span class='caret'></span>" +
@@ -182,7 +187,7 @@ myMap = new ymaps.Map(
 
         // Создадим 2 пункта выпадающего списка
         listBoxItems = [
-            new ymaps.control.ListBoxItem({
+           /* new ymaps.control.ListBoxItem({
                 data: {
                     content: 'Адмиралтейский',
                     center: [59.916825, 30.297542],
@@ -340,7 +345,7 @@ myMap = new ymaps.Map(
             }
         });
 
-    myMap.controls.add(listBox, {float: 'left'});
+    myMap.controls.add(listBox, {float: 'left'});*/
 /* добавляем на карту контрол выбора типа с указанием стандартных карт и вновь созданной */    
 myMap.controls.add(new ymaps.control.TypeSelector({
     mapTypes: ['custom_map#map','yandex#map', 'yandex#hybrid', 'yandex#satellite'],
@@ -363,11 +368,27 @@ myMap.controls.add(new ymaps.control.TypeSelector({
             
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle btn-block" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                Dropdown
+                Выберите район
               </a>
               <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                <a class="dropdown-item" href="#">Action</a>
-                <a class="dropdown-item" href="#">Another action</a>
+                <a class="dropdown-item" href="#" onclick='GoToPlace(59.916825, 30.297542,14,1)'>Адмиралтейский</a>
+                <a class="dropdown-item" href="#" onclick='GoToPlace(59.941425, 30.248045,14,2)'>Василеостровский</a>
+                <a class="dropdown-item" href="#" onclick='GoToPlace(60.086515, 30.229019,13,3)'>Выборгский</a>
+                <a class="dropdown-item" href="#" onclick='GoToPlace(59.997685, 30.396824,13,4)'>Калининский</a>
+                <a class="dropdown-item" href="#" onclick='GoToPlace(59.876391, 30.257603,13,5)'>Кировский</a>
+                <a class="dropdown-item" href="#" onclick='GoToPlace(59.775082, 30.595792,13,6)'>Колпинский</a>
+                <a class="dropdown-item" href="#" onclick='GoToPlace(59.964458, 30.460398,13,7)'>Красногвардейский</a>
+                <a class="dropdown-item" href="#" onclick='GoToPlace(59.790793, 30.121823,13,8)'>Красносельский</a>
+                <a class="dropdown-item" href="#" onclick='GoToPlace(60.013056, 29.714374,13,9)'>Кронштадский</a>
+                <a class="dropdown-item" href="#" onclick='GoToPlace(60.093070, 30.007351,13,10)'>Курортный</a>
+                <a class="dropdown-item" href="#" onclick='GoToPlace(59.852176, 30.323073,13,11)'>Московский</a>
+                <a class="dropdown-item" href="#" onclick='GoToPlace(59.881932, 30.464602,13,12)'>Невский</a>
+                <a class="dropdown-item" href="#" onclick='GoToPlace(59.966381, 30.2845802,14,13)'>Петроградский</a>
+                <a class="dropdown-item" href="#" onclick='GoToPlace(59.868464, 29.949239,14,14)'>Петродворцовый</a>
+                <a class="dropdown-item" href="#" onclick='GoToPlace(60.017715, 30.185145,13,15)'>Приморский</a>
+                <a class="dropdown-item" href="#" onclick='GoToPlace(59.696674, 30.421276,13,16)'>Пушкинский</a>
+                <a class="dropdown-item" href="#" onclick='GoToPlace(59.854111, 30.413919,13,17)'>Фрунзенский</a>
+                <a class="dropdown-item" href="#" onclick='GoToPlace(59.930908, 30.361817,13,18)'>Центральный</a>
                 <div class="dropdown-divider"></div>
                 <a class="dropdown-item" href="#">Something else here</a>
               </div>
