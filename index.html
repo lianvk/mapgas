@@ -1,0 +1,394 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml"></html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+
+    <title>Базовый шаблон | Starter Template for Bootstrap</title>
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <link rel="stylesheet" href="css/bootstrap.min.css" >
+    
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=ac94352d-f4fd-48e2-9436-259015c369f1&lang=ru_RU" type="text/javascript">
+    </script>
+    <script type="text/javascript">
+
+   /* ymaps.ready(init);
+      
+    function init(){ 
+            var myMap = new ymaps.Map("map", {
+                center: [59.95, 30.19],
+                zoom: 10
+            }, {
+                restrictMapArea: true
+             
+        }); 
+            
+            myMap.controls.remove('trafficControl');
+            myMap.controls.remove('fullscreenControl');
+            myMap.controls.remove('geolocationControl');
+            myMap.controls.get('searchControl').options.set('size','small');
+    }*/
+
+    ymaps.ready(function () {
+
+/*  получаем из хранилища встроенный тип слоя */
+let YandexMapLayer = ymaps.layer.storage.get('yandex#map');
+
+/*  Дочерний класс слоя с перекрытием метода getZoomRange */
+let CustomMapLayer = function () {
+    /* Calling the parent's constructor */
+    CustomMapLayer.superclass.constructor.call(this);
+    
+    /*  в служебных полях объявляем максимально доступный зум и интересующую нас степерь масштабирования слоя*/
+    this._maxAvaliableZoom = 19; 
+    this._zoomRange = [0, 22]; 
+}
+
+/*  выполняем наследование */
+ymaps.util.augment(CustomMapLayer, YandexMapLayer, {
+    /* Переопределяем в наследнике метод getZoomRange */
+    getZoomRange: function (point) {
+        let _this = this;
+        /* Вызываем асинхронный метод родительского класса. */
+        CustomMapLayer.superclass.getZoomRange.call(this, point).then(function(zoomRange) {
+            /* 
+             * на случай, если в какой-то местности доступный уровень зума отличается от значения 19 
+             * - делаем обновление локального поля (для дайльнейшего расчета степени искусственного увеличения тайлов) 
+             * но на практике - тайлы с уровнем зума 19 есть везде (Москва и любая степь...), более 19 - тайлов нет
+             */
+            if (zoomRange[1] != _this._maxAvaliableZoom) {
+                _this._maxAvaliableZoom = zoomRange[1];
+            }
+        });
+        return ymaps.vow.resolve(_this._zoomRange);
+    }
+});
+
+let YCustomMapLayer = function () {
+
+    let layer = new CustomMapLayer();
+    let defaultTileUrlTemplate = layer.getTileUrlTemplate();
+    
+    /* перекрытие размера тайла */
+    layer.getTileSize = function(zoom) {
+        
+        let pixelRatio = ymaps.util.hd.getPixelRatio();
+        if(zoom > layer._maxAvaliableZoom) {
+            /* считаем требуемую степень масштабирования тайла */
+            let scale = 2**(zoom - layer._maxAvaliableZoom);
+            let tailImageScale = scale * pixelRatio;
+            
+            /*  подменяем урл получения тайла - при запросе тайла требуемого масштаба - сохраняем качество отобржения карты */
+            /*  фиксируем зум на уровне максимально доступного */
+            /*  дополнительно делаем проверку на запрашиваемый масштаб тайла, т.к. максимально доступный масштаб изображения - 16 */
+            let zoomOverTileUrlTemplate = defaultTileUrlTemplate
+                .replace("%c", "x=%x&y=%y&z="+layer._maxAvaliableZoom)
+                .replace("{{ scale }}", tailImageScale > 16 ? 16: tailImageScale);
+                
+            console.log("zoomOverTileUrlTemplate", zoomOverTileUrlTemplate);
+            
+            layer.setTileUrlTemplate(zoomOverTileUrlTemplate);
+            return [256 * scale, 256 * scale];
+        }
+
+        /* установка дефотного шаблона url */
+        layer.setTileUrlTemplate(defaultTileUrlTemplate);
+        
+        /* возвращем дефолтный размер тайла */
+        return [256, 256];
+    };
+    
+    return layer;
+};
+
+/* регистрируем новый тип слоя */
+ymaps.layer.storage.add('custom#map', YCustomMapLayer);
+
+/* создаем новый тип карты с кастомным слоем */
+let customMapType = new ymaps.MapType('Схема +', ['custom#map']);
+
+/* регистрируем новый тип карты */
+ymaps.mapType.storage.add('custom_map#map', customMapType);
+
+/* выполняем инициализацию карты, с указанием вновь созданного типа */
+myMap = new ymaps.Map(
+    // ID DOM-элемента, в который будет добавлена карта.
+    'map',
+    // Параметры карты.
+    {
+        // Географические координаты центра отображаемой карты.
+        center: [59.95, 30.19], // Москва
+        // Масштаб.
+        zoom: 10,
+        controls: ['zoomControl','searchControl', 'rulerControl'],
+        type: 'custom_map#map'
+    }, {
+                restrictMapArea: true,
+                searchControlProvider: 'yandex#search'
+    });
+
+     // Создадим собственный макет выпадающего списка.
+     ListBoxLayout = ymaps.templateLayoutFactory.createClass(
+            "<button id='my-listbox-header' class='btn btn-success dropdown-toggle' data-toggle='dropdown'>" +
+                "{{data.title}} <span class='caret'></span>" +
+            "</button>" +
+            // Этот элемент будет служить контейнером для элементов списка.
+            // В зависимости от того, свернут или развернут список, этот контейнер будет
+            // скрываться или показываться вместе с дочерними элементами.
+            "<ul id='my-listbox'" +
+                " class='dropdown-menu' role='menu' aria-labelledby='dropdownMenu'" +
+                " style='display: {% if state.expanded %}block{% else %}none{% endif %};'></ul>", {
+
+            build: function() {
+                // Вызываем метод build родительского класса перед выполнением
+                // дополнительных действий.
+                ListBoxLayout.superclass.build.call(this);
+
+                this.childContainerElement = $('#my-listbox').get(0);
+                // Генерируем специальное событие, оповещающее элемент управления
+                // о смене контейнера дочерних элементов.
+                this.events.fire('childcontainerchange', {
+                    newChildContainerElement: this.childContainerElement,
+                    oldChildContainerElement: null
+                });
+            },
+
+            // Переопределяем интерфейсный метод, возвращающий ссылку на
+            // контейнер дочерних элементов.
+            getChildContainerElement: function () {
+                return this.childContainerElement;
+            },
+
+            clear: function () {
+                // Заставим элемент управления перед очисткой макета
+                // откреплять дочерние элементы от родительского.
+                // Это защитит нас от неожиданных ошибок,
+                // связанных с уничтожением dom-элементов в ранних версиях ie.
+                this.events.fire('childcontainerchange', {
+                    newChildContainerElement: null,
+                    oldChildContainerElement: this.childContainerElement
+                });
+                this.childContainerElement = null;
+                // Вызываем метод clear родительского класса после выполнения
+                // дополнительных действий.
+                ListBoxLayout.superclass.clear.call(this);
+            }
+        }),
+
+        // Также создадим макет для отдельного элемента списка.
+        ListBoxItemLayout = ymaps.templateLayoutFactory.createClass(
+            "<li><a>{{data.content}}</a></li>"
+        ),
+
+        // Создадим 2 пункта выпадающего списка
+        listBoxItems = [
+            new ymaps.control.ListBoxItem({
+                data: {
+                    content: 'Адмиралтейский',
+                    center: [59.916825, 30.297542],
+                    zoom: 14
+                }
+            }),
+            new ymaps.control.ListBoxItem({
+                data: {
+                    content: 'Василеостровский',
+                    center: [59.941425, 30.248045],
+                    zoom: 14
+                }
+            }),
+            new ymaps.control.ListBoxItem({
+                data: {
+                    content: 'Выборгский',
+                    center: [60.086515, 30.229019],
+                    zoom: 13
+                }
+            }),
+            new ymaps.control.ListBoxItem({
+                data: {
+                    content: 'Калининский',
+                    center: [59.997685, 30.396824],
+                    zoom: 13
+                }
+            }),
+            new ymaps.control.ListBoxItem({
+                data: {
+                    content: 'Кировский',
+                    center: [59.876391, 30.257603],
+                    zoom: 13
+                }
+            }),
+            new ymaps.control.ListBoxItem({
+                data: {
+                    content: 'Колпинский',
+                    center: [59.775082, 30.595792],
+                    zoom: 13
+                }
+            }),
+            new ymaps.control.ListBoxItem({
+                data: {
+                    content: 'Красногвардейский',
+                    center: [59.964458, 30.460398],
+                    zoom: 13
+                }
+            }),
+            new ymaps.control.ListBoxItem({
+                data: {
+                    content: 'Красносельский',
+                    center: [59.790793, 30.121823],
+                    zoom: 13
+                }
+            }),
+            new ymaps.control.ListBoxItem({
+                data: {
+                    content: 'Кронштадский',
+                    center: [60.013056, 29.714374],
+                    zoom: 13
+                }
+            }),
+            new ymaps.control.ListBoxItem({
+                data: {
+                    content: 'Курортный',
+                    center: [60.093070, 30.007351],
+                    zoom: 13
+                }
+            }),
+            new ymaps.control.ListBoxItem({
+                data: {
+                    content: 'Московский',
+                    center: [59.852176, 30.323073],
+                    zoom: 13
+                }
+            }),
+            new ymaps.control.ListBoxItem({
+                data: {
+                    content: 'Невский',
+                    center: [59.881932, 30.464602],
+                    zoom: 13
+                }
+            }),
+            new ymaps.control.ListBoxItem({
+                data: {
+                    content: 'Петроградский',
+                    center: [59.966381, 30.2845802],
+                    zoom: 14
+                }
+            }),
+            new ymaps.control.ListBoxItem({
+                data: {
+                    content: 'Петродворцовый',
+                    center: [59.868464, 29.949239],
+                    zoom: 14
+                }
+            }),
+            new ymaps.control.ListBoxItem({
+                data: {
+                    content: 'Приморский',
+                    center: [60.017715, 30.185145],
+                    zoom: 13
+                }
+            }),
+            new ymaps.control.ListBoxItem({
+                data: {
+                    content: 'Пушкинский',
+                    center: [59.696674, 30.421276],
+                    zoom: 13
+                }
+            }),
+            new ymaps.control.ListBoxItem({
+                data: {
+                    content: 'Фрунзенский',
+                    center: [59.854111, 30.413919],
+                    zoom: 13
+                }
+            }),
+            new ymaps.control.ListBoxItem({
+                data: {
+                    content: 'Центральный',
+                    center: [59.930908, 30.361817],
+                    zoom: 13
+                }
+            })
+        ],
+
+        // Теперь создадим список, содержащий 2 пункта.
+        listBox = new ymaps.control.ListBox({
+                items: listBoxItems,
+                data: {
+                    title: 'Выберите район'
+                },
+                options: {
+                    // С помощью опций можно задать как макет непосредственно для списка,
+                    layout: ListBoxLayout,
+                    // так и макет для дочерних элементов списка. Для задания опций дочерних
+                    // элементов через родительский элемент необходимо добавлять префикс
+                    // 'item' к названиям опций.
+                    itemLayout: ListBoxItemLayout
+                }
+            });
+
+        listBox.events.add('click', function (e) {
+            // Получаем ссылку на объект, по которому кликнули.
+            // События элементов списка пропагируются
+            // и их можно слушать на родительском элементе.
+            var item = e.get('target');
+            // Клик на заголовке выпадающего списка обрабатывать не надо.
+            if (item != listBox) {
+                myMap.setCenter(
+                    item.data.get('center'),
+                    item.data.get('zoom')
+                );
+            }
+        });
+
+    myMap.controls.add(listBox, {float: 'left'});
+/* добавляем на карту контрол выбора типа с указанием стандартных карт и вновь созданной */    
+myMap.controls.add(new ymaps.control.TypeSelector({
+    mapTypes: ['custom_map#map','yandex#map', 'yandex#hybrid', 'yandex#satellite'],
+}));
+
+});
+
+    </script>
+  </head>
+
+  <body>
+            
+    <nav class="navbar navbar-expand-lg fixed-top ">
+        
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+     <div class="collapse navbar-collapse " id="navbarSupportedContent">
+          <ul class="navbar-nav mr-4">
+            
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle btn-block" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Dropdown
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                <a class="dropdown-item" href="#">Action</a>
+                <a class="dropdown-item" href="#">Another action</a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="#">Something else here</a>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link " href="#">Login</a>
+            </li>
+          </ul>
+         
+        </div>
+     </nav>
+     <header class="header"></header>
+            
+     <div id="map" ></div>
+ </header>
+    <script type="text/javascript" src='js/main.js'></script>
+    <script src='js/jquery.js'></script>
+    <script src='js/popper.min.js'></script>
+    <script src='js/bootstrap.js'></script>
+    
+    
+    
+</body>
+</html>
