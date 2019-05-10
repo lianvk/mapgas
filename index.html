@@ -6,6 +6,7 @@
     <title>Базовый шаблон | Starter Template for Bootstrap</title>
     <link rel="stylesheet" type="text/css" href="css/main.css">
     <link rel="stylesheet" href="css/bootstrap.min.css" >
+    <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
     <script src="https://api-maps.yandex.ru/2.1/?apikey=ac94352d-f4fd-48e2-9436-259015c369f1&lang=ru_RU" type="text/javascript">
     </script>
     <script type="text/javascript" src='js/main.js'></script>
@@ -16,14 +17,24 @@
 
   <body>
             
-    <nav class="navbar navbar-expand-lg fixed-top ">
-        
+    <nav class="navbar navbar-expand-lg fixed-top "> 
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
      <div class="collapse navbar-collapse " id="navbarSupportedContent">
-
-          <ul class="navbar-nav mr-4">  
+          <ul class="navbar-nav mr-4"> 
+              <li class="nav-item">
+                  <a class="nav-link " href="#"><i class="fa fa-cog" aria-hidden="true"></i></a>
+                </li> 
+                <li class="nav-item">
+                  <a class="nav-link " href="#" onclick='needadd=1;myMap.cursors.push("crosshair");'><i class="fa fa-pencil"></i></a>
+                </li> 
+              <li class="nav-item">
+                  <a class="nav-link " href="#"onclick='needadd=2;AreaLineAdd();myMap.cursors.push("crosshair");'><i class="fa fa-square-o" aria-hidden="true"></i></a>
+                </li> 
+                <li class="nav-item">
+                  <a class="nav-link " href="#"onclick='needadd=3;myMap.cursors.push("crosshair");'><i class="fa fa-floppy-o" aria-hidden="true"></i></a>
+                </li> 
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle btn-block" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 Выберите район
@@ -41,7 +52,7 @@
                 <a class="dropdown-item" href="#" onclick='GoToPlace(60.093070, 30.007351,13,10)'>Курортный</a>
                 <a class="dropdown-item" href="#" onclick='GoToPlace(59.852176, 30.323073,13,11)'>Московский</a>
                 <a class="dropdown-item" href="#" onclick='GoToPlace(59.881932, 30.464602,13,12)'>Невский</a>
-                <a class="dropdown-item" href="#" onclick='GoToPlace(59.966381, 30.2845802,14,13)'>Петроградский</a>
+                <a class="dropdown-item" href="#" onclick='GoToPlace(59.966381, 30.284580,14,13)'>Петроградский</a>
                 <a class="dropdown-item" href="#" onclick='GoToPlace(59.868464, 29.949239,14,14)'>Петродворцовый</a>
                 <a class="dropdown-item" href="#" onclick='GoToPlace(60.017715, 30.185145,13,15)'>Приморский</a>
                 <a class="dropdown-item" href="#" onclick='GoToPlace(59.696674, 30.421276,13,16)'>Пушкинский</a>
@@ -54,15 +65,13 @@
             <li class="nav-item">
               <a class="nav-link " href="#">Login</a>
             </li>
-
-          </ul>
-         
-        </div>
+          </ul>  
+        </div>  
      </nav>
      
-     <header class="header"></header>
-            
      <div id="map" ></div>
-  </header>     
+
+      </div>
+
   </body>
 </html>

@@ -3,7 +3,69 @@ function GoToPlace(xx,yy,zoom,gr){
     group_id=gr;   
     };
 
+//добавляем обьект "Линия"
+function GasLineAdd(tx1,ty1){
+    //tx2=Number(tx1)+0.001;
+    //ty2=Number(ty1)+0.001;    
+    strokeColor='#ff0000';          
+    strokeWidth=4;  
+    //var arr=[[tx1, ty1],[tx2, ty2]];
+    var arr=[[tx1, ty1]];
+    polyadd(arr,strokeColor,strokeWidth,true);
+};        
+
+//добавляем обьект "Зона покрытия Замкнутая ломаная"
+function AreaLineAdd(){
+    strokeColor='#ff00ff';          
+    strokeWidth=4;  
+    //var arr=[[tx1, ty1]];
+    var arr=[[]];
+    arealine_add(arr,strokeColor,strokeWidth,true);
+};    
+
+function SaveObjects(){
+  //сначала всё удаляем, потом сразуже сохраняем...            
+        cid=0;          
+        var ars = [];
+        myCollection.each(function(ob) {
+            zxcv=ob;
+            cr=ob.options.get("tfig");
+            //alert(cr);
+            if (cr=="Area"){
+                cr=ob.geometry.getCoordinates();
+                strokeWidth=ob.options.get("strokeWidth");
+                strokeColor=ob.options.get("strokeColor");
+                ars.push({cid:cid,type:"Area",strokeWidth:strokeWidth,strokeColor:strokeColor,coords:cr});
+                //$.post( "controller/server/lanbilling/maps/addobjects.php?blibase="+billing_id+"&group_id="+group_id, { type: "Poly", coords: cr,strokeWidth:strokeWidth,strokeColor:strokeColor});
+                //alert("Poly:"+cr);
+            };
+            if (cr=="Poly"){
+                cr=ob.geometry.getCoordinates();
+                strokeWidth=ob.options.get("strokeWidth");
+                strokeColor=ob.options.get("strokeColor");
+                ars.push({cid:cid,type:"Poly",strokeWidth:strokeWidth,strokeColor:strokeColor,coords:cr});
+                //$.post( "controller/server/lanbilling/maps/addobjects.php?blibase="+billing_id+"&group_id="+group_id, { type: "Poly", coords: cr,strokeWidth:strokeWidth,strokeColor:strokeColor});
+                //alert("Poly:"+cr);
+            };                   
+            if (cr=="Point"){
+                olala=ob;
+                cr=ob.geometry.getCoordinates();
+                iconContent=ob.properties.get("iconContent");
+                hintContent=ob.properties.get("hintContent");
+                preset=ob.options.get("preset");                        
+                ars.push({cid:cid,type:"Point",iconContent:iconContent,hintContent:hintContent,preset:preset,coords:cr});
+                //$.post( "controller/server/lanbilling/maps/addobjects.php?blibase="+billing_id+"&group_id="+group_id, { type: "Point", coords: cr,iconContent:iconContent,hintContent:hintContent});                        
+                //alert("Point:"+cr);
+            };
+          cid++;  
+        });                  
+        $.post( "addobjects.php?blibase="+billing_id+"&group_id="+group_id+"&layer="+type_layout, {param: JSON.stringify(ars)});                                                  
+};
+var myMap;
+
     ymaps.ready(function () {
+
+        myCollection = new ymaps.GeoObjectCollection();
 
 /*  получаем из хранилища встроенный тип слоя */
 let YandexMapLayer = ymaps.layer.storage.get('yandex#map');
@@ -107,12 +169,96 @@ myMap.controls.add(new ymaps.control.TypeSelector({
     mapTypes: ['custom_map#map','yandex#map', 'yandex#hybrid', 'yandex#satellite'],
 }));
 
-});
+myMap.events.add('click', function (e) {
+    //alert(needadd);
+    if (needadd!='null'){
+            var coords = e.get('coords');
+            mclickx=coords[0].toPrecision(6); //где щелкнули?
+            mclicky=coords[1].toPrecision(6);
+            if (needadd=='1'){GasLineAdd(mclickx,mclicky);needadd='null';myMap.cursors.push("arrow");};
+            if (needadd=='2'){AreaLineAdd(mclickx,mclicky);needadd='null';myMap.cursors.push("arrow");};
+            if (needadd=='3'){SaveObjects();};};
+        });
+    });
 
-$(document).ready(function(){
-    $('.header').height($(window).height());
-   })
+        function polyadd(txtycoor,strokeColor,strokeWidth,modeadd){
+                //alert("polyadd"+tx1+"!"+tx2+"!"+ty1+"!"+ty2+"!"+strokeColor+"!"+strokeWidth);
+                        //var arr=[[tx1, ty1],[tx2, ty2]];    
+                        var myPolyline = new ymaps.Polyline(txtycoor, {}, {
+                                // Задаем опции геообъекта.
+                                // Цвет с прозрачностью.
+                                strokeColor: strokeColor,
+                                // Ширину линии.
+                                strokeWidth: strokeWidth,
+                                // Максимально допустимое количество вершин в ломаной.
+                                editorMaxPoints: 50,
+                                editorMenuManager: function (items) {
+                                     items.push({
+                                         title: "Удалить линию",
+                                         onClick: function () {                                 
+                                              myCollection.remove(cured);
+                                              myMap.geoObjects.remove(cured);
+                                         }
+                                     });
+                                     return items;
+                                 },                    
+                                draggable: true,
+                                tfig:"Poly",
+                                // Добавляем в контекстное меню новый пункт, позволяющий удалить ломаную.
+                            });               
+                    myPolyline.events.add('click', function (e) {
+                        if (cured!='null') cured.editor.stopEditing();
+                        e.get('target').editor.startEditing();            
+                        cured=e.get('target');
+                    });
+                    myCollection.add(myPolyline); 
+                    myMap.geoObjects.add(myCollection);    
+                    if (modeadd==true){
+                        //alert("!");
+                      //включаем сразу режим редактирования!  
+                      myPolyline.editor.startDrawing();                                
+                    };
+                     
+            };
 
-   $(document).ready(function() {
-    $(".dropdown-toggle").dropdown();
-});
+
+//Зона покрытия
+function arealine_add(txtycoor,strokeColor,strokeWidth,modeadd){    
+    //alert(txtycoor);
+    //alert("polyadd"+tx1+"!"+tx2+"!"+ty1+"!"+ty2+"!"+strokeColor+"!"+strokeWidth);
+            //var arr=[[tx1, ty1],[tx2, ty2]];    
+            var myPolygon = new ymaps.Polygon(txtycoor, {}, {
+                    // Задаем опции геообъекта.
+                    // Цвет с прозрачностью.
+                    strokeColor: strokeColor,
+                    // Ширину линии.
+                    strokeWidth: strokeWidth,
+                    // Максимально допустимое количество вершин в ломаной.
+                    editorMaxPoints: 50,
+                    editorMenuManager: function (items) {
+                         items.push({
+                             title: "Удалить линию",
+                             onClick: function () {                                 
+                                  myCollection.remove(cured);
+                                  myMap.geoObjects.remove(cured);
+                             }
+                         });
+                         return items;
+                     },                    
+                    draggable: true,
+                    tfig:"Area",
+                    // Добавляем в контекстное меню новый пункт, позволяющий удалить ломаную.
+                });               
+        myPolygon.events.add('click', function (e) {
+            if (cured!='null') cured.editor.stopEditing();
+            e.get('target').editor.startEditing();            
+            cured=e.get('target');
+        });
+        myCollection.add(myPolygon); 
+        myMap.geoObjects.add(myCollection);    
+        if (modeadd==true){
+            //alert("!");
+          //включаем сразу режим редактирования!  
+          myPolygon.editor.startDrawing();                                
+        };
+};
