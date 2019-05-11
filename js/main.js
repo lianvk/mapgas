@@ -3,13 +3,20 @@ function GoToPlace(xx,yy,zoom,gr){
     group_id=gr;   
     };
 
+//добавляем обьект "Метка обычная"
+function MetkaAdd(tx1,ty1){            
+    var arr=[tx1, ty1];
+    // title="Заголовок";
+    comment="Комментарий";
+    preset="twirl#greenStretchyIcon";
+    presetcolor="#ffffff";                            
+    point_add(arr,comment,preset,presetcolor);            
+};    
+
 //добавляем обьект "Линия"
-function GasLineAdd(tx1,ty1){
-    //tx2=Number(tx1)+0.001;
-    //ty2=Number(ty1)+0.001;    
+function GasLineAdd(tx1,ty1){    
     strokeColor='#ff0000';          
     strokeWidth=4;  
-    //var arr=[[tx1, ty1],[tx2, ty2]];
     var arr=[[tx1, ty1]];
     polyadd(arr,strokeColor,strokeWidth,true);
 };        
@@ -18,7 +25,6 @@ function GasLineAdd(tx1,ty1){
 function AreaLineAdd(){
     strokeColor='#ff00ff';          
     strokeWidth=4;  
-    //var arr=[[tx1, ty1]];
     var arr=[[]];
     arealine_add(arr,strokeColor,strokeWidth,true);
 };    
@@ -30,33 +36,18 @@ function SaveObjects(){
         myCollection.each(function(ob) {
             zxcv=ob;
             cr=ob.options.get("tfig");
-            //alert(cr);
             if (cr=="Area"){
                 cr=ob.geometry.getCoordinates();
                 strokeWidth=ob.options.get("strokeWidth");
                 strokeColor=ob.options.get("strokeColor");
                 ars.push({cid:cid,type:"Area",strokeWidth:strokeWidth,strokeColor:strokeColor,coords:cr});
-                //$.post( "controller/server/lanbilling/maps/addobjects.php?blibase="+billing_id+"&group_id="+group_id, { type: "Poly", coords: cr,strokeWidth:strokeWidth,strokeColor:strokeColor});
-                //alert("Poly:"+cr);
             };
             if (cr=="Poly"){
                 cr=ob.geometry.getCoordinates();
                 strokeWidth=ob.options.get("strokeWidth");
                 strokeColor=ob.options.get("strokeColor");
                 ars.push({cid:cid,type:"Poly",strokeWidth:strokeWidth,strokeColor:strokeColor,coords:cr});
-                //$.post( "controller/server/lanbilling/maps/addobjects.php?blibase="+billing_id+"&group_id="+group_id, { type: "Poly", coords: cr,strokeWidth:strokeWidth,strokeColor:strokeColor});
-                //alert("Poly:"+cr);
             };                   
-            if (cr=="Point"){
-                olala=ob;
-                cr=ob.geometry.getCoordinates();
-                iconContent=ob.properties.get("iconContent");
-                hintContent=ob.properties.get("hintContent");
-                preset=ob.options.get("preset");                        
-                ars.push({cid:cid,type:"Point",iconContent:iconContent,hintContent:hintContent,preset:preset,coords:cr});
-                //$.post( "controller/server/lanbilling/maps/addobjects.php?blibase="+billing_id+"&group_id="+group_id, { type: "Point", coords: cr,iconContent:iconContent,hintContent:hintContent});                        
-                //alert("Point:"+cr);
-            };
           cid++;  
         });                  
         $.post( "addobjects.php?blibase="+billing_id+"&group_id="+group_id+"&layer="+type_layout, {param: JSON.stringify(ars)});                                                  
@@ -170,20 +161,21 @@ myMap.controls.add(new ymaps.control.TypeSelector({
 }));
 
 myMap.events.add('click', function (e) {
-    //alert(needadd);
     if (needadd!='null'){
             var coords = e.get('coords');
             mclickx=coords[0].toPrecision(6); //где щелкнули?
             mclicky=coords[1].toPrecision(6);
+            if (needadd=='0'){MetkaAdd(mclickx,mclicky);needadd='null';myMap.cursors.push("arrow");};
             if (needadd=='1'){GasLineAdd(mclickx,mclicky);needadd='null';myMap.cursors.push("arrow");};
             if (needadd=='2'){AreaLineAdd(mclickx,mclicky);needadd='null';myMap.cursors.push("arrow");};
             if (needadd=='3'){SaveObjects();};};
         });
+                    
+        
+
     });
 
-        function polyadd(txtycoor,strokeColor,strokeWidth,modeadd){
-                //alert("polyadd"+tx1+"!"+tx2+"!"+ty1+"!"+ty2+"!"+strokeColor+"!"+strokeWidth);
-                        //var arr=[[tx1, ty1],[tx2, ty2]];    
+        function polyadd(txtycoor,strokeColor,strokeWidth,modeadd){   
                         var myPolyline = new ymaps.Polyline(txtycoor, {}, {
                                 // Задаем опции геообъекта.
                                 // Цвет с прозрачностью.
@@ -214,7 +206,6 @@ myMap.events.add('click', function (e) {
                     myCollection.add(myPolyline); 
                     myMap.geoObjects.add(myCollection);    
                     if (modeadd==true){
-                        //alert("!");
                       //включаем сразу режим редактирования!  
                       myPolyline.editor.startDrawing();                                
                     };
@@ -223,10 +214,7 @@ myMap.events.add('click', function (e) {
 
 
 //Зона покрытия
-function arealine_add(txtycoor,strokeColor,strokeWidth,modeadd){    
-    //alert(txtycoor);
-    //alert("polyadd"+tx1+"!"+tx2+"!"+ty1+"!"+ty2+"!"+strokeColor+"!"+strokeWidth);
-            //var arr=[[tx1, ty1],[tx2, ty2]];    
+function arealine_add(txtycoor,strokeColor,strokeWidth,modeadd){        
             var myPolygon = new ymaps.Polygon(txtycoor, {}, {
                     // Задаем опции геообъекта.
                     // Цвет с прозрачностью.
@@ -257,8 +245,75 @@ function arealine_add(txtycoor,strokeColor,strokeWidth,modeadd){
         myCollection.add(myPolygon); 
         myMap.geoObjects.add(myCollection);    
         if (modeadd==true){
-            //alert("!");
           //включаем сразу режим редактирования!  
-          myPolygon.editor.startDrawing();                                
+           myPolygon.editor.startDrawing();                                
         };
 };
+
+//метка
+function point_add(txtycoor,comment,preset,presetcolor){    
+    myGeoObject = new ymaps.GeoObject({
+        // Описание геометрии.
+        geometry: {
+            type: "Point",
+            coordinates: txtycoor
+        },            
+        // Свойства.
+        properties: {
+            // Контент метки.
+            hintContent: comment,
+            balloonContent:comment
+        }
+        }, {
+        // Опции.
+        // Иконка метки будет растягиваться под размер ее содержимого.
+        preset: preset,
+        // Метку можно перемещать.
+        draggable: true,
+        tfig:"Point"
+    });  
+            myGeoObject.events.add('contextmenu', function (e) {
+                   // Если меню метки уже отображено, то убираем его.
+                   if ($('#menu').css('display') == 'block') {
+                       $('#menu').remove();
+                   } else {
+                       // HTML-содержимое контекстного меню.
+                       var menuContent ='<div id="menu">\
+                               <ul id="menu_list">\
+                                   <li>Название:  <input type="text" name="icon_text" /></li>\
+                                   <li>Подсказка:  <input type="text" name="hint_text" /></li>\
+                               </ul>\
+                           <div align="center"><input type="submit" value="Сохранить" /></div>\
+                           </div>';
+                       // Размещаем контекстное меню на странице
+                       $('body').append(menuContent);
+                       // Задаем позицию меню.
+                       $('#menu').css({
+                           left: e.get('pagePixels')[0],
+                           top: e.get('pagePixels')[1]
+                       });
+                       // Заполняем поля контекстного меню текущими значениями свойств метки.
+                       $('#menu input[name="icon_text"]').val(e.get('target').properties.get('iconContent'));
+                       $('#menu input[name="hint_text"]').val(e.get('target').properties.get('hintContent'));
+                       // При нажатии на кнопку "Сохранить" изменяем свойства метки
+                       // значениями, введенными в форме контекстного меню.
+                       $('#menu input[type="submit"]').click(function () {
+                           e.get('target').properties.set({
+                               hintContent: $('input[name="hint_text"]').val(),
+                               balloonContent: $('input[name="hint_text"]').val()
+                           });
+                           // Удаляем контекстное меню.
+                           $('#menu').remove();
+                       });
+                   }
+               });        
+                
+    myCollection.add(myGeoObject); //добавляем в коллекцию    
+    myMap.geoObjects.add(myCollection); // добавляем на холст
+};
+
+
+
+
+        
+
