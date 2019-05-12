@@ -1,13 +1,12 @@
-function GoToPlace(xx,yy,zoom,gr){
-    myMap.setCenter([xx,yy],zoom);
-    group_id=gr;   
-    };
+// function GoToPlace(xx,yy,zoom,gr){
+//     myMap.setCenter([xx,yy],zoom);
+//     group_id=gr;   
+//     };
 
 //добавляем обьект "Метка обычная"
 function MetkaAdd(tx1,ty1){            
     var arr=[tx1, ty1];
-    // title="Заголовок";
-    comment="Комментарий";
+    comment="Объект потребления газа";
     preset="twirl#greenStretchyIcon";
     presetcolor="#ffffff";                            
     point_add(arr,comment,preset,presetcolor);            
@@ -147,16 +146,155 @@ myMap = new ymaps.Map(
         center: [59.95, 30.19], // Москва
         // Масштаб.
         zoom: 10,
-        controls: ['zoomControl','searchControl', 'rulerControl'],
+        controls: ['searchControl'],
         type: 'custom_map#map'
-    }, {
+    },  {
                 restrictMapArea: true,
                 searchControlProvider: 'yandex#search'
-    });
+    },);
 
-   
+    var rulerControl = new ymaps.control.RulerControl({
+        options: {
+            layout: 'round#rulerLayout'
+        }
+    });
+    myMap.controls.add(rulerControl);
+
+    var zoomControl = new ymaps.control.ZoomControl({
+        options: {
+            layout: 'round#zoomLayout'
+        }
+    });
+    myMap.controls.add(zoomControl);
+
+    // Кнопка ОПГ
+var OPGbutton = new ymaps.control.Button({
+    data: {
+        image: 'images/gasopg.png',
+        title: 'Добавить ОПГ'
+    },
+    options: {
+        layout: 'round#buttonLayout',
+        maxWidth: 120,
+        position: {
+            top: '90px',
+            right: '10px'
+        },
+        selectOnClick: false
+    }
+});
+
+OPGbutton.events.add('click', function(e) {
+    needadd=0;
+})
+
+myMap.controls.add(OPGbutton);
+
+// кнопка сегмент
+
+var Segmentbutton = new ymaps.control.Button({
+    data: {
+        image: 'images/gas.png',
+        title: 'Добавить сегмент газопровода'
+    },
+    options: {
+        layout: 'round#buttonLayout',
+        maxWidth: 120,
+        position: {
+            top: '140px',
+            right: '10px'
+        },
+        selectOnClick: false
+    }
+});
+
+Segmentbutton.events.add('click', function(e) {
+    needadd=1;
+})
+
+myMap.controls.add(Segmentbutton);
+
+// кнопка полигон
+
+var Polygonbutton = new ymaps.control.Button({
+    data: {
+        image: 'images/polygon.png',
+        title: 'Добавить полигон'
+    },
+    options: {
+        layout: 'round#buttonLayout',
+        maxWidth: 120,
+        position: {
+            top: '190px',
+            right: '10px'
+        },
+        selectOnClick: false
+    }
+});
+
+Polygonbutton.events.add('click', function(e) {
+    AreaLineAdd();
+    needadd=2;
+})
+
+myMap.controls.add(Polygonbutton);
+
+// кнопка удалить
+
+var Deletebutton = new ymaps.control.Button({
+    data: {
+        image: 'images/delete.png',
+        title: 'Удалить'
+    },
+    options: {
+        layout: 'round#buttonLayout',
+        maxWidth: 120,
+        position: {
+            top: '290px',
+            right: '10px'
+        },
+    }
+});
+
+Deletebutton.events.add('click', function(e) {
+})
+
+myMap.controls.add(Deletebutton);
+
+// кнопка сохранить
+
+var Savebutton = new ymaps.control.Button({
+    data: {
+        image: 'images/save.png',
+        title: 'Сохранить'
+    },
+    options: {
+        layout: 'round#buttonLayout',
+        maxWidth: 120,
+        position: {
+            top: '10px',
+            right: '10px'
+        },
+    }
+});
+
+Savebutton.events.add('click', function(e) {
+})
+
+myMap.controls.add(Savebutton);
+
 /* добавляем на карту контрол выбора типа с указанием стандартных карт и вновь созданной */    
 myMap.controls.add(new ymaps.control.TypeSelector({
+    options: {
+        layout: 'round#listBoxLayout',
+        itemLayout: 'round#listBoxItemLayout',
+        itemSelectableLayout: 'round#listBoxItemSelectableLayout',
+        float: 'none',
+        position: {
+            bottom: '40px',
+            left: '10px'
+        }
+    },
     mapTypes: ['custom_map#map','yandex#map', 'yandex#hybrid', 'yandex#satellite'],
 }));
 
